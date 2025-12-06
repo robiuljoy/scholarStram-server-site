@@ -164,6 +164,55 @@ async function run() {
 
     // ------------SCHOLARSHIPS API END----------
 
+    // LIST SCHOLARSHIPS WITH SEARCH, FILTER, SORT, PAGINATION START
+    app.get("/scholarships", async (req, res) => {
+      try {
+        const {
+          search,
+          country,
+          category,
+          sort,
+          page = 1,
+          limit = 12,
+        } = req.query;
+
+        const query = {};
+        if (search) {
+          query.$or = [
+            { scholarshipName: { $regex: search, $options: "i" } },
+            { universityName: { $regex: search, $options: "i" } },
+            { degree: { $regex: search, $options: "i" } },
+          ];
+        }
+        if (country) query.universityCountry = country;
+        if (category) query.scholarshipCategory = category;
+
+        const sortObj = {};
+        if (sort === "fee_asc") sortObj.applicationFees = 1;
+        if (sort === "fee_desc") sortObj.applicationFees = -1;
+        if (sort === "date_desc") sortObj.scholarshipPostDate = -1;
+
+        const skip = (Number(page) - 1) * Number(limit);
+
+        const cursor = scholarshipsCollection
+          .find(query)
+          .sort(sortObj)
+          .skip(skip)
+          .limit(Number(limit));
+        const results = await cursor.toArray();
+        const total = await scholarshipsCollection.countDocuments(query);
+
+        res.send({ total, page: Number(page), limit: Number(limit), results });
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // -------------------------
+    // LIST SCHOLARSHIPS WITH SEARCH, FILTER, SORT, PAGINATION END
+    // --------------------------
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
