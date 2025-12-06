@@ -359,6 +359,31 @@ async function run() {
       }
     );
 
+    // Delete application (student can delete own pending application)
+    app.delete("/applications/:id", verifyToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const appDoc = await applicationsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!appDoc) return res.status(404).send({ message: "Not found" });
+        if (appDoc.userEmail !== req.decoded.email)
+          return res.status(403).send({ message: "Forbidden" });
+        if (appDoc.applicationStatus !== "pending")
+          return res
+            .status(400)
+            .send({ message: "Only pending applications can be deleted" });
+
+        const result = await applicationsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
