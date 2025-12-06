@@ -24,6 +24,13 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const db = client.db("scholar_stream_db");
+    const userCollection = db.collection("user");
+    const scholarShipsCollection = db.collection("scholarships");
+    const applicationsCollection = db.collection("applications");
+    const reviewsCollection = db.collection("reviews");
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
