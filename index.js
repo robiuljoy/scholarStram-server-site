@@ -75,6 +75,23 @@ async function run() {
       }
     });
 
+    // GET USERS (ADMIN ONLY)
+    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const { role } = req.query;
+        const query = {};
+        if (role && role !== "All") query.role = role;
+        const users = await userCollection
+          .find(query)
+          .sort({ createdAt: -1 })
+          .toArray();
+        res.send(users);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
