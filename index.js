@@ -135,6 +135,35 @@ async function run() {
       }
     });
 
+    // USER API END
+    // ---------------
+    // ---------------
+
+    // ---------- SCHOLARSHIPS API START----------
+    // CREATE SCHOLARSHIPS (ONLY ADMIN)
+    app.post("/scholarships", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const data = req.body;
+
+        if (!data.scholarshipName || !data.universityName) {
+          return res.status(400).send({
+            message: "scholarshipName and universityName are required",
+          });
+        }
+
+        data.scholarshipPostDate =
+          data.scholarshipPostDate || new Date().toISOString();
+
+        const result = await scholarshipsCollection.insertOne(data);
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // ------------SCHOLARSHIPS API END----------
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
