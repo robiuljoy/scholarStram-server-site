@@ -1,14 +1,20 @@
 const express = require("express");
 const cors = require("cors");
-const app = express();
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const jwt = require("jsonwebtoken");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const Stripe = require("stripe");
+const admin = require("firebase-admin");
+
+const app = express();
 const port = process.env.PORT || 3000;
+const stripe = Stripe(process.env.STRIPE_SECRET || "");
 
 // MIDDLE WEAR
 app.use(express.json());
 app.use(cors());
 
+// MONGODB CONNECTION
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.hl8gbtt.mongodb.net/?appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -20,16 +26,54 @@ const client = new MongoClient(uri, {
   },
 });
 
+// COLLECTIONS IT WILL ASSIGN VALUES AFTER MONGODB CONNECTION
+let userCollection;
+let scholarshipsCollection;
+let applicationsCollection;
+let reviewsCollection;
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-
     const db = client.db("scholar_stream_db");
-    const userCollection = db.collection("user");
-    const scholarShipsCollection = db.collection("scholarships");
-    const applicationsCollection = db.collection("applications");
-    const reviewsCollection = db.collection("reviews");
+
+    // MADE THE CONNECTIONS
+    userCollection = db.collection("users");
+    scholarshipsCollection = db.collection("scholarships");
+    applicationsCollection = db.collection("applications");
+    reviewsCollection = db.collection("reviews");
+
+    // API'S
+
+    app.get("/", (req, res) => {
+      res.send("Api Working Fine");
+    });
+
+    // USER API START
+
+    app.post("/users", async (req, res) => {
+      try {
+        const user = req.body;
+        if (!user?.email)
+          return res.status(400).send({ message: "Email required" });
+
+        user.role = user.role || "Student";
+        user.createdAt = user.createdAt || new Date().toISOString();
+
+        const exists = await userCollection.findOne({ email: user.email });
+        if (exists)
+          return res.send({
+            acknowledged: true,
+            message: "User already exists",
+          });
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+      } catch {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
