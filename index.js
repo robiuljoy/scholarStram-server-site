@@ -384,6 +384,27 @@ async function run() {
       }
     });
 
+    // Mark application payment done (after client confirms)
+    app.patch("/applications/payment/:id", verifyToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const { paymentStatus = "paid", paymentIntentId } = req.body;
+        const update = {
+          paymentStatus,
+          paymentIntentId,
+          paymentDate: new Date().toISOString(),
+        };
+        const result = await applicationsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: update }
+        );
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
