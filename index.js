@@ -104,6 +104,23 @@ async function run() {
       }
     });
 
+    // PROMOTE (ADMIN ONLY)
+    app.patch("/users/role/:id", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const { role } = req.body;
+        if (!role) return res.status(400).send({ message: "Role is required" });
+        const result = await userCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { role } }
+        );
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
