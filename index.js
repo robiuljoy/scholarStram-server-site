@@ -405,6 +405,50 @@ async function run() {
       }
     });
 
+    // ------------------------------------------
+    // ---------- APPLICATIONS API END----------
+    // ------------------------------------------
+
+    // ------------------------------------------
+    // ---------- REVIEWS API START--------------
+    // ------------------------------------------
+
+    // STUDENT ADDS REVIEW START
+    app.post("/reviews", verifyToken, async (req, res) => {
+      try {
+        const review = req.body;
+        if (!review.scholarshipId || !review.userEmail)
+          return res
+            .status(400)
+            .send({ message: "scholarshipId and userEmail required" });
+        review.reviewDate = review.reviewDate || new Date().toISOString();
+        const result = await reviewsCollection.insertOne(review);
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // STUDENT ADDS REVIEW END
+
+    // GET REVIEWS FOR A SCHOLARSHIP START
+    app.get("/reviews/:scholarshipId", async (req, res) => {
+      try {
+        const scholarshipId = req.params.scholarshipId;
+        const results = await reviewsCollection
+          .find({ scholarshipId })
+          .sort({ reviewDate: -1 })
+          .toArray();
+        res.send(results);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // GET REVIEWS FOR A SCHOLARSHIP START
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
