@@ -230,6 +230,75 @@ async function run() {
 
     // GET A SINGLE SCHOLARSHIP BY ID END
 
+    // UPDATE SCHOLARSHIPS (ONLY ADMIN) START
+    app.patch(
+      "/scholarships/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const updates = req.body;
+          const result = await scholarshipsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updates }
+          );
+          res.send(result);
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ message: "Server error" });
+        }
+      }
+    );
+
+    // UPDATE SCHOLARSHIPS (ONLY ADMIN) START
+
+    // DELETE SCHOLARSHIPS (ADMIN ONLY START
+    app.delete(
+      "/scholarships/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const result = await scholarshipsCollection.deleteOne({
+            _id: new ObjectId(id),
+          });
+          res.send(result);
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ message: "Server error" });
+        }
+      }
+    );
+    // DELETE SCHOLARSHIPS (ADMIN ONLY)END
+
+    // ---------- SCHOLARSHIPS API END----------
+
+    // ---------- APPLICATIONS API START----------
+
+    // Student submits application (this stores the application and paymentStatus)
+    app.post("/applications", verifyToken, async (req, res) => {
+      try {
+        const appData = req.body;
+        if (!appData.scholarshipId || !appData.userEmail) {
+          return res
+            .status(400)
+            .send({ message: "scholarshipId and userEmail are required" });
+        }
+        appData.applicationStatus = appData.applicationStatus || "pending";
+        appData.paymentStatus = appData.paymentStatus || "unpaid";
+        appData.applicationDate =
+          appData.applicationDate || new Date().toISOString();
+
+        const result = await applicationsCollection.insertOne(appData);
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
