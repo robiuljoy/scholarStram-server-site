@@ -92,6 +92,18 @@ async function run() {
       }
     });
 
+    // Get A SINGLE USERS
+    app.get("/users/:email/role", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const user = await userCollection.findOne({ email });
+        res.send({ role: user?.role || "Student" });
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
