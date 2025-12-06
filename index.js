@@ -213,6 +213,23 @@ async function run() {
     // LIST SCHOLARSHIPS WITH SEARCH, FILTER, SORT, PAGINATION END
     // --------------------------
 
+    // GET A SINGLE SCHOLARSHIP BY ID START
+    app.get("/scholarships/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const doc = await scholarshipsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!doc) return res.status(404).send({ message: "Not found" });
+        res.send(doc);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // GET A SINGLE SCHOLARSHIP BY ID END
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
