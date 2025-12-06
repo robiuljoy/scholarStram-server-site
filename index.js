@@ -299,6 +299,66 @@ async function run() {
       }
     });
 
+    // Student submits application END
+
+    // Student: get own applications (email must match token)
+    app.get("/my-applications/:email", verifyToken, async (req, res) => {
+      try {
+        const email = req.params.email;
+        if (req.decoded.email !== email)
+          return res.status(403).send({ message: "Forbidden" });
+        const results = await applicationsCollection
+          .find({ userEmail: email })
+          .sort({ applicationDate: -1 })
+          .toArray();
+        res.send(results);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+    // Student: get own applications end
+
+    // Moderator: view all applications
+    app.get("/applications", verifyToken, verifyModerator, async (req, res) => {
+      try {
+        const results = await applicationsCollection
+          .find()
+          .sort({ applicationDate: -1 })
+          .toArray();
+        res.send(results);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+    // Moderator: view all applications end
+
+    // Moderator: update status & feedback
+    app.patch(
+      "/applications/status/:id",
+      verifyToken,
+      verifyModerator,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const { status, feedback } = req.body;
+          const updateFields = {};
+          if (status) updateFields.applicationStatus = status;
+          if (feedback) updateFields.feedback = feedback;
+
+          const result = await applicationsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateFields }
+          );
+          res.send(result);
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ message: "Server error" });
+        }
+      }
+    );
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
